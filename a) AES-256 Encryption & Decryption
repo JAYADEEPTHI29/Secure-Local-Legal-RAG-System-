@@ -1,0 +1,39 @@
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.backends import default_backend
+import os
+
+class AESCipher:
+    def __init__(self, key: bytes):
+        self.key = key
+        self.backend = default_backend()
+        self.block_size = 128
+
+    def encrypt(self, plaintext: bytes) -> bytes:
+        iv = os.urandom(16)
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=self.backend)
+        encryptor = cipher.encryptor()
+
+        padder = padding.PKCS7(self.block_size).padder()
+        padded_data = padder.update(plaintext) + padder.finalize()
+
+        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+        return iv + ciphertext  # prepend IV for decryption
+
+    def decrypt(self, ciphertext: bytes) -> bytes:
+        iv = ciphertext[:16]
+        actual_ct = ciphertext[16:]
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=self.backend)
+        decryptor = cipher.decryptor()
+        padded_plaintext = decryptor.update(actual_ct) + decryptor.finalize()
+
+        unpadder = padding.PKCS7(self.block_size).unpadder()
+        plaintext = unpadder.update(padded_plaintext) + unpadder.finalize()
+        return plaintext
+
+# Usage example:
+key = os.urandom(32)  # Store this securely
+aes = AESCipher(key)
+encrypted = aes.encrypt(b"Confidential Legal Document Text")
+decrypted = aes.decrypt(encrypted)
+print(decrypted.decode())
