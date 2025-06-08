@@ -1,0 +1,15 @@
+import faiss
+import numpy as np
+
+# Create FAISS index
+dim = 768  # Example embedding size
+index = faiss.IndexFlatL2(dim)
+
+# Add embeddings
+embedding = np.random.rand(1, dim).astype('float32')
+index.add(embedding)
+
+# Search for nearest vectors
+query = np.random.rand(1, dim).astype('float32')
+D, I = index.search(query, k=1)
+print(f"Nearest vector ID: {I[0][0]}, Distance: {D[0][0]}")
